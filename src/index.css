@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+.force-graph-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.force-graph-container canvas {
+  @apply !rounded-lg;
+}
