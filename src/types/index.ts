@@ -1,4 +1,4 @@
-export type NodeType = 'basic' | 'task' | 'timeline' | 'dashboard';
+export type NodeType = 'basic' | 'task' | 'timeline' | 'dashboard' | 'goal' | 'user';
 
 export interface Node {
   id: string;
@@ -20,6 +20,8 @@ export interface Node {
     addingResources?: boolean;
     trackingTime?: boolean;
     showProgress?: boolean;
+    resources?: string;
+    timeSpent?: number;
   };
 }
 

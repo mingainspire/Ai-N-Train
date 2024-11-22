@@ -79,6 +79,27 @@ export const MindMap: React.FC = () => {
     links: activeMindMap.links
   };
 
+  const moveUserNodeTowardsGoal = (userNode: Node, goalNode: Node) => {
+    const goalPosition = { x: goalNode.x, y: goalNode.y };
+    const userPosition = { x: userNode.x, y: userNode.y };
+
+    if (goalPosition.x !== undefined && goalPosition.y !== undefined && userPosition.x !== undefined && userPosition.y !== undefined) {
+      const distanceX = goalPosition.x - userPosition.x;
+      const distanceY = goalPosition.y - userPosition.y;
+
+      const stepSize = 10; // Adjust step size as needed
+
+      const newX = userPosition.x + (distanceX / Math.sqrt(distanceX ** 2 + distanceY ** 2)) * stepSize;
+      const newY = userPosition.y + (distanceY / Math.sqrt(distanceX ** 2 + distanceY ** 2)) * stepSize;
+
+      updateNode(userNode.id, { x: newX, y: newY });
+    }
+  };
+
+  const handleMonitorProgress = (userNode: Node, goalNode: Node) => {
+    moveUserNodeTowardsGoal(userNode, goalNode);
+  };
+
   return (
     <div 
       ref={containerRef} 
@@ -91,7 +112,6 @@ export const MindMap: React.FC = () => {
         height={dimensions.height}
         nodeLabel="label"
         nodeRelSize={10}
-        linkDistance={100}
         nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D) => {
           const size = node.type === 'goal' ? 12 : 10;
           const { x, y, color, label = '' } = node;
@@ -111,7 +131,7 @@ export const MindMap: React.FC = () => {
         }}
         onNodeClick={(node: any, event) => handleNodeClick(node, event)}
         onNodeDragEnd={(node: any) => {
-          if (node.type !== 'goal') {
+          if (node.type !== 'goal' && !selectedNode) {
             updateNode(node.id, { x: node.x, y: node.y });
           }
         }}
@@ -129,7 +149,6 @@ export const MindMap: React.FC = () => {
           {selectedNode.type === 'goal' ? (
             <GoalNode
               node={selectedNode}
-              position={menuPosition}
               onClose={handleContextMenuClose}
               onUpdate={updateNode}
             />
@@ -139,6 +158,12 @@ export const MindMap: React.FC = () => {
               position={menuPosition}
               onClose={handleContextMenuClose}
               onUpdate={updateNode}
+              onMonitorProgress={() => {
+                const goalNode = activeMindMap.nodes.find(n => n.type === 'goal');
+                if (goalNode) {
+                  handleMonitorProgress(selectedNode, goalNode);
+                }
+              }}
             />
           ) : (
             <NodeContextMenu

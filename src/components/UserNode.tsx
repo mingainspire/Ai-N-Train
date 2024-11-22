@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { User, Clock, Wrench, Calendar } from 'lucide-react';
+import { User, Clock, Wrench, Calendar, Slider } from 'lucide-react';
 import { Node } from '../types';
 import { cn } from '../utils/cn';
 
@@ -9,6 +9,7 @@ interface UserNodeProps {
   position: { x: number; y: number };
   onClose: () => void;
   onUpdate: (nodeId: string, updates: Partial<Node>) => void;
+  onMonitorProgress?: () => void;
 }
 
 export const UserNode: React.FC<UserNodeProps> = ({
@@ -16,12 +17,14 @@ export const UserNode: React.FC<UserNodeProps> = ({
   position,
   onClose,
   onUpdate,
+  onMonitorProgress,
 }) => {
   const [showDeadline, setShowDeadline] = useState(false);
   const [deadline, setDeadline] = useState(node.data?.deadline || '');
   const [resources, setResources] = useState(node.data?.resources || '');
   const [showResources, setShowResources] = useState(false);
   const [timeSpent, setTimeSpent] = useState(node.data?.timeSpent || 0);
+  const [progress, setProgress] = useState(node.data?.progress || 0);
 
   const handleSaveDeadline = () => {
     onUpdate(node.id, {
@@ -59,6 +62,25 @@ export const UserNode: React.FC<UserNodeProps> = ({
       x: node.x,
       y: node.y
     });
+  };
+
+  const handleProgressChange = (value: number) => {
+    setProgress(value);
+    const goalNode = node.links.find(link => link.target === 'goal')?.targetNode;
+    if (goalNode) {
+      const goalPosition = { x: goalNode.x, y: goalNode.y };
+      const userPosition = { x: node.x, y: node.y };
+
+      if (goalPosition.x !== undefined && goalPosition.y !== undefined && userPosition.x !== undefined && userPosition.y !== undefined) {
+        const distanceX = goalPosition.x - userPosition.x;
+        const distanceY = goalPosition.y - userPosition.y;
+
+        const newX = userPosition.x + (distanceX * value) / 100;
+        const newY = userPosition.y + (distanceY * value) / 100;
+
+        onUpdate(node.id, { x: newX, y: newY, data: { ...node.data, progress: value } });
+      }
+    }
   };
 
   if (showDeadline) {
@@ -149,6 +171,12 @@ export const UserNode: React.FC<UserNodeProps> = ({
       label: 'Track Time',
       description: `Time spent: ${node.data?.timeSpent || 0} hours`,
       onClick: handleTimeUpdate
+    },
+    {
+      icon: Clock,
+      label: 'Monitor Progress',
+      description: 'Move user node closer to goal node',
+      onClick: onMonitorProgress
     }
   ];
 
@@ -164,30 +192,3 @@ export const UserNode: React.FC<UserNodeProps> = ({
             <div className="p-2 border-b dark:border-gray-700">
               <div className="flex items-center space-x-2">
                 <User className="w-5 h-5 text-purple-500" />
-                <span className="font-medium">Your Progress</span>
-              </div>
-            </div>
-            {suggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={suggestion.onClick}
-                className={cn(
-                  'w-full flex items-center space-x-3 p-2 rounded-md text-left transition-colors',
-                  'hover:bg-gray-100 dark:hover:bg-gray-700'
-                )}
-              >
-                <suggestion.icon className="w-5 h-5 text-purple-500" />
-                <div className="flex-1">
-                  <div className="font-medium">{suggestion.label}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {suggestion.description}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
-  );
-};
